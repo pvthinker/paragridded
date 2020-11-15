@@ -1,0 +1,11 @@
+numpy
+scipy
+numba
+netCDF4
+shapely
+matplotlib
+ratarmount
+schwimmbad
+mpi4py
+ipython
+colored
