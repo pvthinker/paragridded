@@ -81,6 +81,9 @@ class Marray(np.ndarray):
         attrs[self.dims[0]] = elem
         return Marray(data, attrs=attrs, stagg=self.stagg.copy(), dims=dims)
 
+    def __str__(self):
+        return self.__repr__()
+
     def __repr__(self):
         string = []
         if hasattr(self, "dims"):

@@ -258,7 +258,7 @@ class Variable():
                 j0 += ny[j]
 
         else:
-            tile = get_one_tile(self.tiles, self.missing)
+            tile = get_one_tile(tiles, missing)
             ncfile = getncfile(nctemplate, tile, **self.kwargs)#nctemplate(tile)#.format(tile=tile, **self.kwargs)
             with Dataset(ncfile) as nc:
                 var[tuple(oidx)] = nc.variables[varname][iidx]
