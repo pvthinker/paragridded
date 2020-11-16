@@ -24,12 +24,13 @@ class MDataset():
     """
 
     def __init__(self, nctemplate, blocks, dimpart, halow=0, gridsizes={}, **kwargs):
+        self.domainpartition = dimpart["domainpartition"]
         mapping = {}
-        for k, v in dimpart.items():
+        for k, v in dimpart["netcdfdimnames"].items():
             for d in v:
                 mapping[d] = k
         self.mapping = mapping
-        self.dimpart = dimpart
+        self.netcdfdimnames = dimpart["netcdfdimnames"]
         self.blocks = blocks
         self.tileblock = blocks["tileblock"]
         self.tiles = process_tileblock(blocks["tileblock"], blocks["partition"])
@@ -115,16 +116,20 @@ class MDataset():
 
         for dim in self.dims:
             if dim in self.mapping:
+                griddimname = self.mapping[dim]
+            else:
+                griddimname = dim
+            if griddimname in self.domainpartition:
                 if dim in gridsizes:
                     size = gridsizes[dim]
                 else:
-                    partdim = self.mapping[dim]
-                    nblocks = self.tiles.shape[partdim]#len(list(self.tileblock[partdim]))
+                    partindex = self.domainpartition.index(griddimname)
+                    nblocks = self.tiles.shape[partindex]
                     size = []
                     for i in range(nblocks):
-                        if partdim == 0:
+                        if partindex == 0:
                             tile = self.tiles[i, 0]
-                        elif partdim == 1:
+                        elif partindex == 1:
                             tile = self.tiles[0, i]
                         ncfile = getncfile(self.nctemplate, tile, **kwargs)#self.nctemplate(tile)#.format(tile=tile, **kwargs)
                         with Dataset(ncfile) as nc:

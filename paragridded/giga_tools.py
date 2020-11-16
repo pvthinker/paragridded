@@ -10,8 +10,11 @@ subdomains = range(1, 14)
 
 partition = (100, 100)
 
-dimpart = {0: ("eta_rho", "eta_v"),
-           1: ("xi_rho", "xi_u")}
+dimpart = {"netcdfdimnames":
+           {"sigma": ("sigma_rho", "sigma_w"),
+            "eta": ("eta_rho", "eta_v"),
+            "xi": ("xi_rho", "xi_u")},
+           "domainpartition": ("eta", "xi")}
 
 dirgrid = "/net/omega/local/tmp/1/gula/GIGATL1/GIGATL1_1h_tides/GRD"
 dirsurf = "/net/omega/local/tmp/1/gula/GIGATL1/GIGATL1_1h_tides/SURF/gigatl1_surf.2008-05-23"

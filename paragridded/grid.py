@@ -124,32 +124,6 @@ def flip_stagg(stagg_in, dim):
     return stagg_out
 
 
-def sigma2z(grid, zeta=0, stagg={}):
-    dims = grid.dims
-    staggering = {}
-    for d in dims:
-        staggering[d] = (d in stagg) and stagg[d]
-    sizes = grid.get_sizes(staggering)
-    z = ma.Marray(ma.zeros(sizes),
-                  dims=dims,
-                  attrs={"name": "depth"},
-                  stagg=staggering)
-    staggdims = tuple(
-        [d for d in dims if staggering[d] and d in grid.depth.dims])
-    hinv = ma.Marray(zeta+grid.depth, dims=grid.depth.dims)
-    #ma.copymeta(grid.depth, hinv)
-    hinv2 = grid.avg(hinv, staggdims)
-    h = ma.Marray(grid.depth, dims=grid.depth.dims)
-    h2 = grid.avg(h, staggdims)
-    sigma = grid.sigma(stagg=staggering)
-    if debug:
-        print(hinv2.shape, h2.shape, staggering, sigma, z.shape)
-    for k in range(sigma.shape[0]):
-        if debug:
-            print(k, sigma[k])
-        z[k] = -h2 + sigma[k]*hinv2
-    return z
-
 
 def attachgrid(grid, marray, **kwargs):
     setattr(marray, "grid", grid)

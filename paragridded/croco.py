@@ -5,6 +5,8 @@ import marray as ma
 import grid as gr
 import nctools as nct
 
+debug = False
+
 dims = ("t", "sigma", "eta", "xi")
 
 hdims = dims[2:]
@@ -55,7 +57,7 @@ def convert_netcdf_dim_to_var(vardims, gdims, mapping):
     for k in range(len(vardims)):
         ddd = vardims[k]
         if ddd in mapping:
-            vardims[k] = gdims[-2+mapping[ddd]]
+            vardims[k] = mapping[ddd]
 
 
 def ncread(mdataset, grid, varname, elem=slice(None)):
@@ -93,3 +95,43 @@ def ncread(mdataset, grid, varname, elem=slice(None)):
         data = fixdata
 
     return ma.Marray(data, attrs=attrs, dims=vardims, stagg=stagg)
+
+def sigma2z(grid, zeta=0, stagg={}):
+    """ compute depth from sigma coordinates
+    """
+    staggering = {}
+    for d in grid.dims:
+        staggering[d] = (d in stagg) and stagg[d]
+    sizes = grid.get_sizes(staggering)
+    z = ma.Marray(ma.zeros(sizes),
+                  dims=grid.dims,
+                  attrs={"name": "depth"},
+                  stagg=staggering)
+    staggdims = tuple(
+        [d for d in grid.dims if staggering[d] and d in grid.depth.dims])
+    if isinstance(zeta, int):
+        timeison = False
+        hinv = ma.Marray(zeta+grid.depth, dims=grid.depth.dims)
+    else:
+        timeison = True
+        hinv = ma.Marray(zeta+grid.depth, dims=zeta.dims)
+
+    hinv2 = grid.avg(hinv, staggdims)
+    h = ma.Marray(grid.depth, dims=grid.depth.dims)
+    h2 = grid.avg(h, staggdims)
+    sigma = grid.sigma(stagg=staggering)
+    if debug:
+        print(hinv2.shape, h2.shape, staggering, sigma, z.shape)
+    if "t" in grid.sizes:
+        for kt in range(grid.sizes["t"]):
+            if timeison:
+                htot = hinv2[kt]
+            else:
+                htot = hinv
+            for k in range(grid.sizes["sigma"]):
+                z[kt, k] = -h2 + sigma[k]*htot
+    else:
+        for k in range(grid.sizes["sigma"]):
+            z[k] = -h2 + sigma[k]*hinv2
+    return z
+
