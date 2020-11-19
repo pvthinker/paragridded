@@ -64,7 +64,8 @@ class MDataset():
         partition = self.blocks["partition"]
         tiles = self.tiles.copy()
         tiles[self.missing] = -1
-        ncfile = getncfile(self.nctemplate, 0, **self.kwargs)#self.nctemplate(0)#.format(tile=0, **self.kwargs)
+        tile0 = get_one_tile(tiles, self.missing)
+        ncfile = getncfile(self.nctemplate, tile0, **self.kwargs)#self.nctemplate(0)#.format(tile=0, **self.kwargs)
         string = []
         string += [MD("<class 'paragridded.nctools.MDataset'>")]
         string += [BB("* filename: ")+"(for tile==0)"]
