@@ -33,6 +33,19 @@ variables = {"temp": tpoint,
              "w": wpoint}
 
 
+def fill_halo(z2d, halow):
+    z2d[halow-1, :] = 2*z2d[halow, :]-z2d[halow+1, :]
+    z2d[-halow, :] = 2*z2d[-halow-1, :]-z2d[-halow-2, :]
+
+    z2d[:, halow-1] = 2*z2d[:, halow]-z2d[:, halow+1]
+    z2d[:, -halow] = 2*z2d[:, -halow-1]-z2d[:, -halow-2]
+
+    z2d[halow-1, halow-1] = 2*z2d[halow-1, halow-1]-z2d[halow+1, halow-1]
+    z2d[-halow, halow-1] = 2*z2d[-halow-1, halow-1]-z2d[-halow-2, halow-1]
+    z2d[halow-1, -halow] = 2*z2d[halow-1, -halow-1]-z2d[halow-1, -halow-2]
+    z2d[-halow, -halow] = 2*z2d[-halow-1, -halow]-z2d[-halow-2, -halow]
+
+
 def load_grid(grdfiles, blocks, dimpart, nsigma, **kwargs):
     """Setup a `grid` by reading `grdfiles` on `blocks`
     """
@@ -43,6 +56,13 @@ def load_grid(grdfiles, blocks, dimpart, nsigma, **kwargs):
 
     lat = nct.readmarray(ncgrid, "lat_rho", hdims)
     lon = nct.readmarray(ncgrid, "lon_rho", hdims)
+
+    if ncgrid.halow > 0:
+        halow = ncgrid.halow
+        # extend lon-lat on the halow=1 to infer correctly @ f-points
+        fill_halo(lat, halow)
+        fill_halo(lon, halow)
+
     depth = nct.readmarray(ncgrid, "h", hdims)
     sigma = ma.Marray((np.arange(nsigma)+0.5)/nsigma, dims=vdims)
 
@@ -75,7 +95,6 @@ def ncread(mdataset, grid, varname, elem=slice(None)):
         attrs[vardims[0]] = elem
         vardims = vardims[1:]
 
-
     convert_netcdf_dim_to_var(vardims, grid.dims, mdataset.mapping)
 
     sizes = grid.get_sizes(stagg)
@@ -95,6 +114,7 @@ def ncread(mdataset, grid, varname, elem=slice(None)):
         data = fixdata
 
     return ma.Marray(data, attrs=attrs, dims=vardims, stagg=stagg)
+
 
 def sigma2z(grid, zeta=0, stagg={}):
     """ compute depth from sigma coordinates
@@ -134,4 +154,3 @@ def sigma2z(grid, zeta=0, stagg={}):
         for k in range(grid.sizes["sigma"]):
             z[k] = -h2 + sigma[k]*hinv2
     return z
-

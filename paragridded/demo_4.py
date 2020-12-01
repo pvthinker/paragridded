@@ -6,6 +6,7 @@ coordinates to specified depths
 import numpy as np
 import nctools as nct
 import giga_tools as giga
+import giga_subdomains as gs
 import croco as croco
 import vinterp
 import matplotlib.pyplot as plt
@@ -21,42 +22,46 @@ plt.ion()
 # define a block of tiles (this one below is Gulf Stream)
 tileblock = (range(78, 83), range(25, 32))
 
-blocks = {"partition": giga.partition,
+block = {"partition": giga.partition,
           "tileblock": tileblock}
+
+subds = gs.get_subds_from_block(block)
+for subd in subds:
+    giga.mount(subd)
 
 halow = 10
 
-g = croco.load_grid(giga.grdfiles, blocks, giga.dimpart,
+grid = croco.load_grid(giga.grdfiles, block, giga.dimpart,
                     giga.nsigma, halow=halow)
 
 
 # the grid MDataset is needed to get the sizes of the possibly
 # missing tiles in the history files
-ncgrid = nct.MDataset(giga.grdfiles, blocks, giga.dimpart, halow=halow)
+ncgrid = nct.MDataset(giga.grdfiles, block, giga.dimpart, halow=halow)
 
 # ncgrid.sizes is sent to the Surface MDataset
-nch = nct.MDataset(giga.hisfiles, blocks, giga.dimpart,
+nch = nct.MDataset(giga.hisfiles, block, giga.dimpart,
                    halow=halow, gridsizes=ncgrid.sizes)
 
 # restrict grid to have only one element in time
-g.sizes["t"] = 1
+grid.sizes["t"] = 1
 
 
 kt = 0
 # read temp as marray (only one snapshot)
-temp = croco.ncread(nch, g, "temp", elem=kt)
+temp = croco.ncread(nch, grid, "temp", elem=kt)
 time = nch.variables["time"]
 
 # set target depths
 zout = np.asarray([-2000, -1000, -500, -200, -100])
-zr = croco.sigma2z(g)
+zr = croco.sigma2z(grid)
 
 # interpolate a depths `zout`
-temp_z = vinterp.Vinterp3d(g, temp, zr[0], zout)
+temp_z = vinterp.Vinterp3d(grid, temp, zr[0], zout)
 
 # get grid coordinates @ f-point
-xf = g.xi(stagg=croco.fpoint)
-yf = g.eta(stagg=croco.fpoint)
+xf = grid.xi(stagg=croco.fpoint)
+yf = grid.eta(stagg=croco.fpoint)
 
 cmap = "YlGnBu_r"
 

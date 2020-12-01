@@ -42,43 +42,51 @@ class MDataset():
         # else:
         #     self.tileblock = blocks["tileblock"]
             
-            
+
         self.nctemplate = nctemplate
         self.halow = halow
-        self.toc = self._get_toc(**kwargs)
+        self.kwargs = kwargs
+
         self.missing = self._get_missing(**kwargs)
 
         if self.missing.all():
+            self.toc = {}
             # tileblock has no data
             self.dims = []
             self.sizes = {}
             self.variables = {}
         else:
+            self.toc = self._get_toc(**kwargs)
             self.dims = self._get_dims(**kwargs)
             self.sizes = self._get_sizes(gridsizes, **kwargs)
+
             self.variables = self._get_vars(**kwargs)
 
-        self.kwargs = kwargs
 
     def __repr__(self):
         partition = self.blocks["partition"]
-        tiles = self.tiles.copy()
-        tiles[self.missing] = -1
-        tile0 = get_one_tile(tiles, self.missing)
-        ncfile = getncfile(self.nctemplate, tile0, **self.kwargs)#self.nctemplate(0)#.format(tile=0, **self.kwargs)
         string = []
         string += [MD("<class 'paragridded.nctools.MDataset'>")]
-        string += [BB("* filename: ")+"(for tile==0)"]
-        string += [f"  - {ncfile}"]
-        string += [BB("* partition: ")+f"{partition}"]
-        string += [BB("* tiles:")+f" {self.tiles.shape}"]
-        string += [tiles.__repr__()]
-        string += [BB("* dims: ")+f"{self.dims}"]
-        string += [BB("* sizes:")]
-        string += [f"  - {k}: {v}" for k, v in self.sizes.items()]
-        string += [BB("* variables:")]
-        string += [f"  - {k}: {v}" for k, v in self.toc.items()]
-        string += [BB("* Halo width: ")+f"{self.halow}"]
+
+        if self.missing.all():
+            string += ["empty dataset, all tiles are missing"]
+        else:
+            tiles = self.tiles.copy()
+            tiles[self.missing] = -1
+            tile0 = get_one_tile(tiles, self.missing)
+            ncfile = getncfile(self.nctemplate, tile0, **self.kwargs)
+
+            string += [BB("* filename: ")+f"(for tile=={tile0})"]
+            string += [f"  - {ncfile}"]
+            string += [BB("* partition: ")+f"{partition}"]
+            string += [BB("* tiles:")+f" {self.tiles.shape}"]
+            string += [tiles.__repr__()]
+            string += [BB("* dims: ")+f"{self.dims}"]
+            string += [BB("* sizes:")]
+            string += [f"  - {k}: {v}" for k, v in self.sizes.items()]
+            string += [BB("* variables:")]
+            string += [f"  - {k}: {v}" for k, v in self.toc.items()]
+            string += [BB("* Halo width: ")+f"{self.halow}"]
         return "\n".join(string)
 
     def _get_vars(self, **kwargs):
@@ -114,6 +122,7 @@ class MDataset():
     def _get_sizes(self, gridsizes, **kwargs):
         sizes = {}
         tile = get_one_tile(self.tiles, self.missing)
+        nby, nbx = self.tiles.shape
 
         for dim in self.dims:
             if dim in self.mapping:
@@ -129,12 +138,26 @@ class MDataset():
                     size = []
                     for i in range(nblocks):
                         if partindex == 0:
-                            tile = self.tiles[i, 0]
+                            j = 0
+                            while (j<nbx) and (self.missing[i,j]):
+                                j+=1
+                            if (j==nbx):
+                                tile = -1
+                            else:
+                                tile = self.tiles[i, j]
                         elif partindex == 1:
-                            tile = self.tiles[0, i]
-                        ncfile = getncfile(self.nctemplate, tile, **kwargs)#self.nctemplate(tile)#.format(tile=tile, **kwargs)
-                        with Dataset(ncfile) as nc:
-                            size += [len(nc.dimensions[dim])]
+                            j = 0
+                            while (j<nby) and (self.missing[j,i]):
+                                j+=1
+                            if (j==nby):
+                                tile = -1
+                            else:
+                                tile = self.tiles[j, i]
+
+                        if tile>-1:
+                            ncfile = getncfile(self.nctemplate, tile, **kwargs)
+                            with Dataset(ncfile) as nc:
+                                size += [len(nc.dimensions[dim])]
 
             else:
                 ncfile = getncfile(self.nctemplate, tile, **kwargs)#self.nctemplate(tile)#.format(tile=tile, **kwargs)
@@ -146,7 +169,7 @@ class MDataset():
         return sizes
 
     def _get_dims(self, **kwargs):
-        tile = self.tiles.flat[0]
+        tile = get_one_tile(self.tiles, self.missing)
         ncfile = getncfile(self.nctemplate, tile, **kwargs)#self.nctemplate(tile)#.format(tile=tile, **kwargs)
         with Dataset(ncfile) as nc:
             dims = [dim for dim in nc.dimensions]
@@ -187,7 +210,8 @@ class Variable():
     def _get_attrs(self):
         tiles = self.infos["tiles"]
         nctemplate = self.infos["nctemplate"]
-        tile = tiles.flat[0]
+        missing = self.infos["missing"]
+        tile = get_one_tile(tiles, missing)
         ncfile = getncfile(nctemplate, tile, **self.kwargs)#nctemplate(tile)#.format(tile=tile, **self.kwargs)
         with Dataset(ncfile) as nc:
             v = nc.variables[self.varname]
@@ -276,36 +300,29 @@ class Variable():
             npx = len(nx)
             for j in range(npy):
                 for i in range(npx):
-                    dj = di = 0
+                    tile0 = tiles[j, i]
+                    neighbours = topo.get_neighbours(tile0, partition)
+                    direc = []
+                    # loop over directions
+                    for neighb in neighbours.keys():
+                        dj, di = neighb
+                        # check if there is a halo to be filled
+                        # in this direction
+                        if (0<=(j+dj)<npy) and (0<=(i+di)<npx):
+                            # this neighbour is an interior tile
+                            pass
+                        else:
+                            direc += [(dj, di)]
+                    if debug:
+                        print(f"{tile} directions to use {direc}")
 
-                    if j == 0:
-                        dj = -1
-                    elif j == npy-1:
-                        dj = +1
-
-                    if i == 0:
-                        di = -1
-                    elif i == npx-1:
-                        di = +1
-
-                    if (di == 0) and (dj == 0):
-                        # innertile
-                        regions = []
-                    elif (di == 0) or (dj == 0):
-                        # border tile but not a corner
-                        regions = [(dj, di)]
-                    else:
-                        # corner tile
-                        regions = [(dj, di), (dj, 0), (0, di)]
-
-                    for dj, di in regions:
+                    for dj, di in direc:
                         shape = (ny[j], nx[i])
-                        tile0 = tiles[j, i]
                         tile, hiidx, hoidx = topo.get_haloinfos(tile0, partition, shape, halow,
                                                                 (dj, di))
                         hoidx = (shiftslice(hoidx[0], j*ny[j]),
                                  shiftslice(hoidx[1], i*nx[i]))
-                        ncfile = getncfile(nctemplate, tile, **self.kwargs)#nctemplate(tile)#.format(tile=tile, **self.kwargs)
+                        ncfile = getncfile(nctemplate, tile, **self.kwargs)
                         if os.path.isfile(ncfile):
                             with Dataset(ncfile) as nc:
                                 if debug:
@@ -350,7 +367,7 @@ def shape_from_sizes(sizes, dims, halow):
 
 def process_tileblock(tileblock, partition):
 
-    if isinstance(tileblock, int):
+    if "int" in str(type(tileblock)):
         tile = tileblock
         tilesarray = np.array(tile, dtype=int)
         tilesarray.shape = [1]*len(partition)

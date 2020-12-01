@@ -1,5 +1,6 @@
 import nctools as nct
 import giga_tools as giga
+import giga_subdomains as gs
 import croco as croco
 import matplotlib.pyplot as plt
 import matplotlib.colorbar as cb
@@ -14,25 +15,29 @@ plt.ion()
 # define a block of tiles (this one below is Florida)
 tileblock = (range(80, 85), range(20, 25))
 
-blocks = {"partition": giga.partition,
-          "tileblock": tileblock}
+block = {"partition": giga.partition,
+         "tileblock": tileblock}
+
+subds = gs.get_subds_from_block(block)
+for subd in subds:
+    giga.mount(subd)
 
 halow = 10
 
-g = croco.load_grid(giga.grdfiles, blocks, giga.dimpart,
-                    giga.nsigma, halow=halow)
+grid = croco.load_grid(giga.grdfiles, block, giga.dimpart,
+                       giga.nsigma, halow=halow)
 
 
 # the grid MDataset is needed to get the sizes of the possibly
 # missing tiles in the history files
-ncgrid = nct.MDataset(giga.grdfiles, blocks, giga.dimpart, halow=halow)
+ncgrid = nct.MDataset(giga.grdfiles, block, giga.dimpart, halow=halow)
 
 # ncgrid.sizes is sent to the Surface MDataset
-ncs = nct.MDataset(giga.surffiles, blocks, giga.dimpart,
+ncs = nct.MDataset(giga.surffiles, block, giga.dimpart,
                    halow=halow, gridsizes=ncgrid.sizes)
 
 # let's inspect the objects
-print(g)
+print(grid)
 print(ncgrid)
 print(ncs)
 
@@ -44,18 +49,18 @@ zeta0 = ncs.variables["zeta"][:]
 
 # zeta is a plain ndarray, without metadata
 # if we want to have a marray
-zeta = croco.ncread(ncs, g, "zeta")
+zeta = croco.ncread(ncs, grid, "zeta")
 
 # these are the two same data
-assert ((zeta0-zeta)==0).all()
+assert ((zeta0-zeta) == 0).all()
 
 # but zeta is richer, it has its metadata
 print(zeta)
 
 
 # get grid coordinates @ f-point
-xf = g.xi(stagg=croco.fpoint)
-yf = g.eta(stagg=croco.fpoint)
+xf = grid.xi(stagg=croco.fpoint)
+yf = grid.eta(stagg=croco.fpoint)
 
 zeta0 = zeta[0]
 cmap = "RdBu_r"
