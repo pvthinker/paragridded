@@ -286,10 +286,11 @@ def set_ratarmount():
     else:
         if rank == 0:
             print("")
-            print("warning".center(20, "*"))
+            print(BB("warning").center(20, "*"))
             print(f"{mount} is not installed or cannot be found")
             print("you can set it manually with")
             print("giga.ratarmount = /path/to/bin/ratarmount")
+    return ratarmount
 
 
 def mount_tar(source, tarfile, destdir):
@@ -317,6 +318,7 @@ def mount_tar(source, tarfile, destdir):
             command = f"cp {sqlitesdir}/{sqlitefile} {ratardirsqlite}"
             os.system(command)
 
+    assert len(ratarmount)>0, BB("You forgot to set the ratarmount path")
     command = f"{ratarmount} {srcfile} {destdir}"
     os.system(command)
 
@@ -367,8 +369,8 @@ def mount(subd, grid=False, overwrite=True):
 
     if tomount:
         mount_tar(srcdir, tarfile, destdir)
-        # if not(grid):
-        #     write_toc(destdir, subd, hisdate)
+        if not(grid):
+            write_toc(destdir, subd, hisdate)
 
 
 def write_toc(destdir, subd, _hisdate):
@@ -541,5 +543,5 @@ for d in dirs:
         command = f"rm -Rf {d}"
         os.system(command)
 
-set_ratarmount()
+ratarmount = set_ratarmount()
 barrier()
