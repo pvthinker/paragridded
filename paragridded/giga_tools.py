@@ -7,16 +7,41 @@
 
 """
 import os
+import sys
 import glob
 import data
 from shapely.geometry.polygon import Polygon
 import pickle
 from pretty import BB
-from mpi4py import MPI
 import tempfile
 
-comm = MPI.COMM_WORLD
-rank = MPI.COMM_WORLD.Get_rank()
+try:
+    from mpi4py import MPI
+    is_mpi = True
+except:
+    print("MPI not found, no problem")
+    is_mpi = False
+
+if is_mpi:
+    comm = MPI.COMM_WORLD
+    rank = MPI.COMM_WORLD.Get_rank()
+else:
+    rank = 0
+
+
+def barrier():
+    if is_mpi:
+        MPI.COMM_WORLD.Barrier()
+    else:
+        pass
+
+
+def abort():
+    if is_mpi:
+        MPI.COMM_WORLD.Abort()
+    else:
+        sys.exit()
+
 
 dirmodule = os.path.dirname(data.__file__)
 sep = os.path.sep
@@ -49,7 +74,7 @@ if rank == 0:
     print(f"paragridded is located in : {dirmodule}")
     print(f"data are located in : {dirdata}")
 
-MPI.COMM_WORLD.Barrier()
+barrier()
 
 
 def create_hisdir():
@@ -78,7 +103,7 @@ def create_hisdir():
         try:
             os.rename(f"{parent}", f"{dirtrash}/")
         except:
-            MPI.COMM_WORLD.Abort()
+            abort()
 
         for subd in subdomains:
             dirname = dirhis.format(subd=subd)
@@ -105,7 +130,7 @@ def create_directory(dirname, attempt=0):
                 create_directory(dirname, attempt=2)
             if attempt == 2:
                 print(f"{dirname}: really serious problem")
-                MPI.COMM_WORLD.Abort()
+                abort()
             else:
                 print(f"{dirname}: problem with the fuse system")
                 #print("*** try to fix it with fuserumount")
@@ -198,7 +223,7 @@ def setup_directories():
     if not os.path.isdir(dirmounted):
         os.makedirs(dirmounted)
 
-    MPI.COMM_WORLD.Barrier()
+    barrier()
     create_hisdir()
 
 
@@ -252,6 +277,21 @@ def get_subdmap(directory):
     return _subdmap
 
 
+def set_ratarmount():
+    mount = "ratarmount"
+    options = ""  # "-c -gs 160000"
+    ratarmount = os.popen(f"which {mount}").read()
+    if len(ratarmount) > 0:
+        pass
+    else:
+        if rank == 0:
+            print("")
+            print("warning".center(20, "*"))
+            print(f"{mount} is not installed or cannot be found")
+            print("you can set it manually with")
+            print("giga.ratarmount = /path/to/bin/ratarmount")
+
+
 def mount_tar(source, tarfile, destdir):
     """
     source: str, directory of the tar files
@@ -265,12 +305,6 @@ def mount_tar(source, tarfile, destdir):
     #print(f"mount {srcfile} on {destdir}")
     assert os.path.isfile(srcfile), f"{srcfile} does not exsit"
 
-    mount = "ratarmount"
-    options = ""  # "-c -gs 160000"
-    msg = "{mount} is not installed"
-    whichmount = os.popen(f"which {mount}").read()
-    assert len(whichmount) > 0, msg
-
     sqlitefile = get_sqlitefilename(srcfile)
     home = os.path.expanduser("~")
     ratardirsqlite = f"{home}/.ratarmount"
@@ -283,7 +317,7 @@ def mount_tar(source, tarfile, destdir):
             command = f"cp {sqlitesdir}/{sqlitefile} {ratardirsqlite}"
             os.system(command)
 
-    command = f"{mount} {options} {srcfile} {destdir}"
+    command = f"{ratarmount} {srcfile} {destdir}"
     os.system(command)
 
     if os.path.isfile(f"{sqlitesdir}/{sqlitefile}"):
@@ -507,4 +541,5 @@ for d in dirs:
         command = f"rm -Rf {d}"
         os.system(command)
 
-comm.Barrier()
+set_ratarmount()
+barrier()
