@@ -78,7 +78,8 @@ def get_blocks_subds_from_tiles(tileslist, blocksize):
 
     for j in range(0, 100, blocksize):
         for i in range(0, 100, blocksize):
-            block["tileblock"] = (range(j, j+blocksize), range(i, i+blocksize))
+            block["tileblock"] = (range(j, min(j+blocksize, 100)),
+                                  range(i, min(i+blocksize, 100)))
             tiles = topo.tilesfromblock(block)
             intersection = tl.intersection(set(tiles.flat))
             if len(intersection) == 0:
