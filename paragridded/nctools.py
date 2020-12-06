@@ -206,6 +206,10 @@ class Variable():
         self.infos = infos
         self.kwargs = kwargs
         self.attrs = self._get_attrs()
+        dims = self.infos["dims"]
+        sizes = self.infos["sizes"]
+        halow = self.infos["halow"]
+        self.shape = shape_from_sizes(sizes, dims, halow)
 
     def _get_attrs(self):
         tiles = self.infos["tiles"]
@@ -221,9 +225,8 @@ class Variable():
 
     def __repr__(self):
         dims = self.infos["dims"]
-        sizes = self.infos["sizes"]
         halow = self.infos["halow"]
-        shape = shape_from_sizes(sizes, dims, halow)
+        shape = self.shape
         string = []
         string += [VA("<class 'paragridded.nctools.Variable'>")]
         string += [BB("* name: ")+f"{self.varname}{dims}"]
