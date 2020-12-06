@@ -315,7 +315,7 @@ def mount_tar(source, tarfile, destdir):
         pass
     else:
         if os.path.isfile(f"{sqlitesdir}/{sqlitefile}"):
-            command = f"cp {sqlitesdir}/{sqlitefile} {ratardirsqlite}"
+            command = f"cp {sqlitesdir}/{sqlitefile} {ratardirsqlite}/"
             os.system(command)
 
     assert len(ratarmount)>0, BB("You forgot to set the ratarmount path")
@@ -326,7 +326,7 @@ def mount_tar(source, tarfile, destdir):
         # nothing to do
         pass
     else:
-        command = f"cp {ratardirsqlite}/{sqlitefile} {sqlitesdir}"
+        command = f"cp {ratardirsqlite}/{sqlitefile} {sqlitesdir}/"
         os.system(command)
 
     # delete sqlitefile on ratardirsqlite
