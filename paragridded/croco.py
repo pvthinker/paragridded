@@ -86,7 +86,7 @@ def ncread(mdataset, grid, varname, elem=slice(None)):
     """
     assert varname in variables, f"this `{varname}` is not implemented"
     var = mdataset.variables[varname]
-    data = var[elem]
+    # data = var[elem]
     attrs = var.attrs
     stagg = variables[varname]
 
@@ -98,20 +98,42 @@ def ncread(mdataset, grid, varname, elem=slice(None)):
     convert_netcdf_dim_to_var(vardims, grid.dims, mdataset.mapping)
 
     sizes = grid.get_sizes(stagg)
-    shape = list(data.shape)
-    shape[-2] = sizes[vardims[-2]]
-    shape[-1] = sizes[vardims[-1]]
-    shape = tuple(shape)
 
-    if shape != data.shape:
+    shape_horiz_data = var.shape[-2:]
+    shape_horiz_grid = [sizes[vardims[-2]], sizes[vardims[-1]]]
+    #shape[-2] = sizes[vardims[-2]]
+    #shape[-1] = sizes[vardims[-1]]
+    #shape = tuple(shape)
+
+    if shape_horiz_grid != shape_horiz_data:
         # fix shape
         # the fix is only on "eta" and "xi"
-        print(f"grid {shape} != data {data.shape}")
-        jj0 = shape[-2]-data.shape[-2]
-        ii0 = shape[-1]-data.shape[-1]
-        fixdata = np.zeros(shape)
-        fixdata[..., jj0:, ii0:] = data
-        data = fixdata
+        jj0 = shape_horiz_grid[-2]-shape_horiz_data[-2]
+        ii0 = shape_horiz_grid[-1]-shape_horiz_data[-1]
+        if debug:
+            print(f"grid {shape_horiz_grid} != data {shape_horiz_data} start index {jj0}, {ii0}")
+
+        if isinstance(elem, int):
+            shape = var.shape[1:-2]+shape_horiz_grid
+        else:
+            shape = var.shape[:-2]+shape_horiz_grid
+        if debug:
+            print(f"target shape {shape}")
+        data = np.zeros(shape)
+
+        if jj0 < 2:
+            jslice = slice(jj0, None)
+        elif jj0 == 2:
+            jslice = slice(1, -1)
+
+        if ii0 < 2:
+            islice = slice(ii0, None)
+        elif ii0 == 2:
+            islice = slice(1, -1)
+
+        data[..., jslice, islice] = var[elem]
+    else:
+        data = var[elem]
 
     return ma.Marray(data, attrs=attrs, dims=vardims, stagg=stagg)
 
