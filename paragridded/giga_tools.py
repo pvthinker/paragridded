@@ -9,10 +9,10 @@
 import os
 import sys
 import glob
-import data
 from shapely.geometry.polygon import Polygon
 import pickle
 from pretty import BB
+import pretty
 import tempfile
 
 try:
@@ -43,8 +43,10 @@ def abort():
         sys.exit()
 
 
-dirmodule = os.path.dirname(data.__file__)
+# path to where giga_tools.py sits
+dirmodule = os.path.dirname(pretty.__file__)
 sep = os.path.sep
+# path to pickle GIGATL data files
 dirdata = sep.join(dirmodule.split(sep)[:-1] + ["data"])
 
 subdomains = range(1, 14)
@@ -148,16 +150,14 @@ if hostname == "irene":
     # fix_filename_on_store
     # dirsurf = "/ccc/store/cont003/gch0401/gch0401/GIGATL1_1h_tides/SURF"
 
-    dirmounted = "/ccc/work/cont003/gen12051/groullet/gigatl"
     dirmounted_root = "/ccc/work/cont003/gch0401/groullet/gigatl"
 
     dirmounted = f"{dirmounted_root}/R_{rank:04}"
 
-    #dirgrid = dirmounted+"/GRD/{subd:02}"
     dirgrid = "/ccc/scratch/cont003/gen12051/gulaj/GIGATL1/GRD3"
     dirhis = dirmounted+"/HIS/{subd:02}"
 
-    dirtrash = f"/ccc/scratch/cont003/gen12051/groullet/trash"
+    #dirtrash = f"/ccc/scratch/cont003/gen12051/groullet/trash"
 
     # for d in [dirhis]:
     #     for subd in subdomains:
@@ -180,7 +180,7 @@ if hostname == "irene":
     tarhistemplate = "gigatl1_his_1h.{hisdate}.{subd:02}.tar"
 
     for subd in subdomains:
-        assert os.path.isdir(dirgigaref.format(subd=1))
+        assert os.path.isdir(dirgigaref.format(subd=subd))
 
 else:
     dirgrid = "/net/omega/local/tmp/1/gula/GIGATL1/GIGATL1_1h_tides/GRD"
@@ -190,10 +190,10 @@ else:
     dirmounted_root = "/net/omega/local/tmp/1/roullet/gigatl"
 
     dirmounted = f"{dirmounted_root}/R_{rank:04}"
-
-    dirtrash = "/net/omega/local/tmp/1/roullet/trash"
-
     dirhis = dirmounted+"/HIS/{subd:02}"
+
+    #dirtrash = "/net/omega/local/tmp/1/roullet/trash"
+
     hisindex = 72
     hisdate = "2008-09-23"
     tarhistemplate = "gigatl1_his_1h.{hisdate}.{subd:02}.tar"
@@ -209,16 +209,23 @@ hour = 14
 sqlitesdir = f"{dirmounted_root}/sqlites"
 
 
+def check():
+    """ check that all paths are properly defined"""
+    checked = True
+    print(f" - history tar files will be mounted on: {dirmounted_root}")
+    print(f" - ratarmount executable is in         : {ratarmount}")
+
+
 def setup_directories():
     if rank == 0:
         if not os.path.isdir(sqlitesdir):
             os.makedirs(sqlitesdir)
 
-        if not os.path.isdir(dirtrash):
-            os.makedirs(dirtrash)
-        else:
-            command = f"rm -Rf {dirtrash}/*"
-            os.system(command)
+        # if not os.path.isdir(dirtrash):
+        #     os.makedirs(dirtrash)
+        # else:
+        #     command = f"rm -Rf {dirtrash}/*"
+        #     os.system(command)
 
     if not os.path.isdir(dirmounted):
         os.makedirs(dirmounted)
@@ -282,7 +289,9 @@ def set_ratarmount():
     options = ""  # "-c -gs 160000"
     ratarmount = os.popen(f"which {mount}").read()
     if len(ratarmount) > 0:
-        pass
+        # remove the trailing "\n"
+        ratarmount = ratarmount[:-1]
+        print(f"found ratarmount in : {ratarmount}")
     else:
         if rank == 0:
             print("")
@@ -318,7 +327,7 @@ def mount_tar(source, tarfile, destdir):
             command = f"cp {sqlitesdir}/{sqlitefile} {ratardirsqlite}/"
             os.system(command)
 
-    assert len(ratarmount)>0, BB("You forgot to set the ratarmount path")
+    assert len(ratarmount) > 0, BB("You forgot to set the ratarmount path")
     command = f"{ratarmount} {srcfile} {destdir}"
     os.system(command)
 
@@ -533,15 +542,16 @@ with open(f"{dirdata}/gigaspecs.pkl", "rb") as f:
     missing = pickle.load(f)
     subdmap = pickle.load(f)
 
-dirs = glob.glob(dirmounted+"/R*/HIS/??")
+if False:
+    dirs = glob.glob(dirmounted+"/R*/HIS/??")
 
-for d in dirs:
-    try:
-        command = f"fusermount -u {d}"
-        os.system(command)
-    except:
-        command = f"rm -Rf {d}"
-        os.system(command)
+    for d in dirs:
+        try:
+            command = f"fusermount -u {d}"
+            os.system(command)
+        except:
+            command = f"rm -Rf {d}"
+            os.system(command)
 
 ratarmount = set_ratarmount()
 barrier()

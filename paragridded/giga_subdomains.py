@@ -8,6 +8,7 @@ import matplotlib.colorbar as cb
 import matplotlib.cm as cm
 import pickle
 from shapely.geometry.polygon import Polygon
+from shapely.geometry.point import Point
 import shapely.ops as so
 #from descartes import PolygonPatch
 import giga_tools as giga
@@ -120,7 +121,11 @@ def plot_blocks(domain, tileslist, blocks, filename=None):
         plt.savefig(filename)
 
 
-def plot_subdomains(tiles, fill=False, **kwargs):
+def plot_block(block, **kwargs):
+    tiles = topo.tilesfromblock(block)
+    plot_subdomains(tiles, number=True, **kwargs)
+
+def plot_subdomains(tiles, fill=False, number=False, **kwargs):
     for tile in np.asarray(tiles).flat:
         if tile in giga.corners:
             p = Polygon(giga.corners[tile])
@@ -128,6 +133,10 @@ def plot_subdomains(tiles, fill=False, **kwargs):
                 plt.fill(*p.exterior.xy, **kwargs)
             else:
                 plt.plot(*p.exterior.xy, **kwargs)
+            if number:
+                x, y = p.centroid.coords.xy
+                plt.text(x[-1], y[-1], f"{tile}",
+                         ha="center", va="center", fontsize=10)
 
 
 def LLTR2domain(lowerleft, topright):
@@ -153,6 +162,36 @@ def find_tiles_inside(domain, oceanonly=True):
                 tileslist += [tile]
     return tileslist
 
+def generate_tile_poly():
+    for tile, corner in giga.corners.items():
+        yield (tile, Polygon(corner))
+
+def find_tile_at_point(lon, lat):
+    """retrieve the (tile, subd) where the point (lon, lat) sits
+
+    approximative algo: the tiles boundaries are curved.
+    A point inside a tile ain't necessarily inside the quadrilateral
+    formed with the four corners...
+
+    needs a second pass to decide whether it is the good tile or its
+    neighbour
+
+    """
+    point = Point(lon, lat)
+    res = [tile for tile, poly in generate_tile_poly()
+           if poly.contains(point)]
+
+    if len(res) == 0:
+        return -1, 0
+    elif len(res) == 1:
+        tile = res[0]
+        if tile in giga.subdmap:
+            subd = giga.subdmap[tile]
+        else:
+            subd = -1
+        return tile, subd
+    else:
+        raise ValueError(f"problem: I found {len(res)} tiles")
 
 def extract_blocks_inside(domain, blocksize=1):
     pass
@@ -181,3 +220,4 @@ def plot_gigatl():
 
     plt.grid(True)
     plt.savefig("giga_subdomains.png")
+    plt.savefig("giga_subdomains.pdf")

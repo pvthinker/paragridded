@@ -28,6 +28,8 @@ Pygments==2.7.2
 pyparsing==2.4.7
 python-dateutil==2.8.1
 ratarmount==0.6.1
+ruamel.yaml==0.16.12
+ruamel.yaml.clib>=0.1.2
 schwimmbad==0.3.1
 scipy==1.5.4
 Shapely==1.7.1

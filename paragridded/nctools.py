@@ -323,15 +323,15 @@ class Variable():
                         shape = (ny[j], nx[i])
                         tile, hiidx, hoidx = topo.get_haloinfos(tile0, partition, shape, halow,
                                                                 (dj, di))
-                        hoidx = (shiftslice(hoidx[0], j*ny[j]),
-                                 shiftslice(hoidx[1], i*nx[i]))
+                        hoidx = (shiftslice(hoidx[0], sum(ny[:j])),
+                                 shiftslice(hoidx[1], sum(nx[:i])))
                         ncfile = getncfile(nctemplate, tile, **self.kwargs)
                         if os.path.isfile(ncfile):
                             with Dataset(ncfile) as nc:
-                                if debug:
-                                    print(tile0, tile, hoidx, hiidx)
                                 oidx[-2:] = hoidx
                                 iidx[-2:] = hiidx
+                                if debug:
+                                    print(tile0, tile, hoidx, hiidx, oidx, iidx, var.shape)
                                 var[tuple(
                                     oidx)] = nc.variables[varname][tuple(iidx)]
         return var
