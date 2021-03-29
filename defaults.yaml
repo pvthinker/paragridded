@@ -1,0 +1,41 @@
+#
+# Defaults parameters for paragridded
+#
+# --------------------
+Folders:
+
+    dirmodule:
+        default: DIRECTORY_TO_PARAGRIDDED
+        doc: paragridded main folder
+        avail: you've no choice
+        type: str
+
+    dirgridtar:
+        default: /ccc/store/cont003/gch0401/gch0401/GIGATL1_1h_tides/GRD
+        doc: where the grid files are (per region)
+        avail: change it if you aren't at TGCC
+        type: str
+      
+    dirgigaref:
+        default: /ccc/store/cont003/gch0401/gch0401/GIGATL1_1h_tides/HIS_1h
+        doc: where the NetCDF history files
+        avail: change it if you aren't at TGCC
+        type: str
+      
+    dirgiga:
+        default: /ccc/store/cont003/gch0401/groullet/GIGATL1_1h_tides/HIS_1h
+        doc: UNUSED -> TO BE REMOVED
+        avail: change it if you aren't at TGCC
+        type: str
+        
+    dirgigabin:
+        default: /ccc/store/cont003/gch0401/groullet/dat
+        doc: where the RGDF history files
+        avail: change it if you aren't at TGCC
+        type: str
+ 
+    dirscratch:
+        default: /ccc/scratch/cont003/gen12051/groullet/giga
+        doc: YOUR scratchdir on irene
+        avail: change it
+        type: str
