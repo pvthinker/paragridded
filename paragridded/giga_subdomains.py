@@ -125,6 +125,7 @@ def plot_block(block, **kwargs):
     tiles = topo.tilesfromblock(block)
     plot_subdomains(tiles, number=True, **kwargs)
 
+
 def plot_subdomains(tiles, fill=False, number=False, **kwargs):
     for tile in np.asarray(tiles).flat:
         if tile in giga.corners:
@@ -162,9 +163,23 @@ def find_tiles_inside(domain, oceanonly=True):
                 tileslist += [tile]
     return tileslist
 
+
 def generate_tile_poly():
     for tile, corner in giga.corners.items():
         yield (tile, Polygon(corner))
+
+
+def find_coord_in_tile(tile, lon, lat, grid=None):
+    if grid is None:
+        block = {"partition": giga.partition, "tileblock": tile}
+        grid = croco.load_grid(giga.grdfiles, block,
+                               giga.dimpart, giga.nsigma, halow=0)
+    hw = grid.halow
+    lonc, latc = grid.xi(), grid.eta()
+    dist = (lon-lonc)**2 + (lat-latc)**2
+    j, i = np.unravel_index(np.argmin(dist, axis=None), dist.shape)
+    return (j-hw, i-hw)
+
 
 def find_tile_at_point(lon, lat):
     """retrieve the (tile, subd) where the point (lon, lat) sits
@@ -192,6 +207,7 @@ def find_tile_at_point(lon, lat):
         return tile, subd
     else:
         raise ValueError(f"problem: I found {len(res)} tiles")
+
 
 def extract_blocks_inside(domain, blocksize=1):
     pass

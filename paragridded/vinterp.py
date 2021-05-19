@@ -225,7 +225,7 @@ vinterp2d = jit(vinterp2d_raw)
 def Vinterp3d(grid, phi_in, z_in, z_out):
     # TODO: get the staggering of phi_in
 
-    zmin = -grid.depth
+    zmin = -grid.mapping["sigma"]["h"]
     zmax = 0.
     shape = (z_out.shape[0],) + phi_in.shape[-2:]
     phi_out = np.zeros(shape)
@@ -234,71 +234,71 @@ def Vinterp3d(grid, phi_in, z_in, z_out):
     return phi_out
 
 
-# if __name__ == "__main__":
-#     from R_tools_fort import sigma_to_z_intr_sfc
+if __name__ == "__main__":
+    from R_tools_fort import sigma_to_z_intr_sfc
 
-#     nz = 100
-#     dz = 10./nz
-#     z_in = (np.arange(nz)+0.5)*dz
-#     z_out = np.asarray([-2.23, 3.25, 4.75, 6.78])
+    nz = 100
+    dz = 10./nz
+    z_in = (np.arange(nz)+0.5)*dz
+    z_out = np.asarray([-2.23, 3.25, 4.75, 6.78])
 
-#     def f(x):
-#         return x**3
+    def f(x):
+        return x**3
 
-#     phi_in = f(z_in)
-#     phi_out = np.zeros_like(z_out)
-#     vinterp1d(phi_in, phi_out, z_in, z_out, 4)
-#     print("theorique:")
-#     print(f(z_out))
-#     print("numerique:")
-#     print(phi_out)
-#     print("error:")
-#     print(phi_out-f(z_out))
+    phi_in = f(z_in)
+    phi_out = np.zeros_like(z_out)
+    vinterp1d(phi_in, phi_out, z_in, z_out, 4)
+    print("theorique:")
+    print(f(z_out))
+    print("numerique:")
+    print(phi_out)
+    print("error:")
+    print(phi_out-f(z_out))
 
-#     ny, nx = 140, 105
-#     #ny, nx = 5, 5
-#     nz = len(z_in)
-#     zi = z_in[:, np.newaxis, np.newaxis]*np.ones((nz, ny, nx))
-#     pi = f(zi)
-#     po = np.zeros((len(z_out), ny, nx))
+    ny, nx = 140, 105
+    #ny, nx = 5, 5
+    nz = len(z_in)
+    zi = z_in[:, np.newaxis, np.newaxis]*np.ones((nz, ny, nx))
+    pi = f(zi)
+    po = np.zeros((len(z_out), ny, nx))
 
-#     vinterp3d(pi, po, zi, z_out, 4, method=0)
+    vinterp3d(pi, po, zi, z_out, 4, method=0)
 
-#     nbope = nx*ny*nz*len(z_out)*100
+    nbope = nx*ny*nz*len(z_out)*100
 
-#     # sys.exit()
-#     lm = nx
-#     mm = ny
-#     n = len(z_in)
-#     nz = len(z_out)
-#     z_r = np.zeros((lm + 2, mm + 2, n))
-#     z_w = np.zeros((lm + 2, mm + 2, n+1))
-#     z_lev = np.zeros((lm + 2, mm + 2, nz))
-#     rmask = np.ones((lm + 2, mm + 2))
-#     imin = 0
-#     jmin = 0
-#     kmin = 1
-#     for k in range(n):
-#         z_r[:, :, k] = (k+0.5)*dz
-#     for k in range(n+1):
-#         z_w[:, :, k] = k*dz
+    # sys.exit()
+    lm = nx
+    mm = ny
+    n = len(z_in)
+    nz = len(z_out)
+    z_r = np.zeros((lm + 2, mm + 2, n))
+    z_w = np.zeros((lm + 2, mm + 2, n+1))
+    z_lev = np.zeros((lm + 2, mm + 2, nz))
+    rmask = np.ones((lm + 2, mm + 2))
+    imin = 0
+    jmin = 0
+    kmin = 1
+    for k in range(n):
+        z_r[:, :, k] = (k+0.5)*dz
+    for k in range(n+1):
+        z_w[:, :, k] = k*dz
 
-#     var = f(z_r)
-#     for k in range(nz):
-#         z_lev[:, :, k] = z_out[k]
+    var = f(z_r)
+    for k in range(nz):
+        z_lev[:, :, k] = z_out[k]
 
-#     fillvalue = 999.
+    fillvalue = 999.
 
-#     var_zlv = sigma_to_z_intr_sfc(
-#         z_r, z_w, rmask, var, z_lev, imin, jmin, kmin, fillvalue)
+    var_zlv = sigma_to_z_intr_sfc(
+        z_r, z_w, rmask, var, z_lev, imin, jmin, kmin, fillvalue)
 
-#     # perfs
+    # perfs
 
-#     # >>> %timeit vinterp3d(pi, po, zi, z_out, 4)
-#     # 1.03 s ± 46.5 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+    # >>> %timeit vinterp3d(pi, po, zi, z_out, 4)
+    # 1.03 s ± 46.5 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 
-#     # >>> %timeit var_zlv = sigma_to_z_intr_sfc(z_r,z_w,rmask,var,z_lev,imin,jmin,kmin, fillvalue)
-#     # 29.6 ms ± 313 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+    # >>> %timeit var_zlv = sigma_to_z_intr_sfc(z_r,z_w,rmask,var,z_lev,imin,jmin,kmin, fillvalue)
+    # 29.6 ms ± 313 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
 
-#     # >>> %timeit vinterp3d(pi, po, zi, z_out, 4, method=2)
-#     # 4.99 ms ± 90.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+    # >>> %timeit vinterp3d(pi, po, zi, z_out, 4, method=2)
+    # 4.99 ms ± 90.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)

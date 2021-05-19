@@ -77,6 +77,10 @@ def load_grid(grdfiles, blocks, dimpart, nsigma, **kwargs):
     return gr.Grid(coords, dims, depth=depth, angle=angle, mask=mask, pm=pm, pn=pn, f=f, **kwargs)
 
 
+def patch_metric(grid):
+    """Read metric and add it as attribute to grid"""
+
+
 def convert_netcdf_dim_to_var(vardims, gdims, mapping):
     """Transform NetCDF dims into grid dims using the mapping
     """
@@ -117,7 +121,8 @@ def ncread(mdataset, grid, varname, elem=slice(None)):
         jj0 = shape_horiz_grid[-2]-shape_horiz_data[-2]
         ii0 = shape_horiz_grid[-1]-shape_horiz_data[-1]
         if debug:
-            print(f"grid {shape_horiz_grid} != data {shape_horiz_data} start index {jj0}, {ii0}")
+            print(
+                f"grid {shape_horiz_grid} != data {shape_horiz_data} start index {jj0}, {ii0}")
 
         if isinstance(elem, int):
             shape = var.shape[1:-2]+shape_horiz_grid
