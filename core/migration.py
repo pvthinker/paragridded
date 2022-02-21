@@ -6,7 +6,7 @@ import subprocess
 
 PIPE = subprocess.PIPE
 
-def get_status(param, subd, date, filetype):
+def get_status(param, subd, date, filetype,get_filename=False):
     assert filetype in ["tar", "bin"]
     
     if filetype == "tar":
@@ -24,4 +24,7 @@ def get_status(param, subd, date, filetype):
         status = result.stdout.split()[-1].decode("utf8")
 
     # status : "released", "online"
-    return status
+    if get_filename:
+        return filename,status
+    else:
+        return status
