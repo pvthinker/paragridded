@@ -11,7 +11,7 @@ class Grid():
 
     """
 
-    def __init__(self, coords, dims, depth=None, halow=0, mask=None, **kwargs):
+    def __init__(self, coords, dims, depth=None, halow=0, mask=None, angle=None, pm=None, pn=None, f=None, **kwargs):
         self.coords = coords
         self.dims = dims
         # https://stackoverflow.com/questions/3431676/creating-functions-in-a-loop
@@ -26,6 +26,15 @@ class Grid():
         self.sizes = sizes
         self.depth = depth
         self.halow = halow
+        self.mask_rho  = mask
+        self.angle = angle
+        self.pm    = pm
+        self.pn    = pn
+        self.f     = f
+
+
+
+
 
     def __repr__(self):
         string = []

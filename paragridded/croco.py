@@ -64,11 +64,17 @@ def load_grid(grdfiles, blocks, dimpart, nsigma, **kwargs):
         fill_halo(lon, halow)
 
     depth = nct.readmarray(ncgrid, "h", hdims)
+    angle = nct.readmarray(ncgrid, "angle", hdims)
+    mask  = nct.readmarray(ncgrid, "mask_rho", hdims)
+    pm    = nct.readmarray(ncgrid, "pm", hdims)
+    pn    = nct.readmarray(ncgrid, "pn", hdims)
+    f     = nct.readmarray(ncgrid, "f", hdims)
+
     sigma = ma.Marray((np.arange(nsigma)+0.5)/nsigma, dims=vdims)
 
     coords = {"t": time, "sigma": sigma, "eta": lat, "xi": lon}
 
-    return gr.Grid(coords, dims, depth=depth, **kwargs)
+    return gr.Grid(coords, dims, depth=depth, angle=angle, mask=mask, pm=pm, pn=pn, f=f, **kwargs)
 
 
 def convert_netcdf_dim_to_var(vardims, gdims, mapping):
