@@ -154,7 +154,8 @@ if hostname == "irene":
 
     dirmounted = f"{dirmounted_root}/R_{rank:04}"
 
-    dirgrid = "/ccc/scratch/cont003/gen12051/gulaj/GIGATL1/GRD3"
+    #dirgrid = "/ccc/scratch/cont003/gen12051/gulaj/GIGATL1/GRD3"
+    #dirgrid = "/ccc/scratch/cont003/gen12051/gulaj/GIGATL1/GRD4"
     dirhis = dirmounted+"/HIS/{subd:02}"
 
     #dirtrash = f"/ccc/scratch/cont003/gen12051/groullet/trash"
@@ -165,7 +166,7 @@ if hostname == "irene":
     #         create_directory(dirname)
 
     # or use directly
-    # dirgrid = "/ccc/scratch/cont003/ra4735/gulaj/GIGATL1/INIT_N100_100_100/GRD3"
+    dirgrid = "/ccc/scratch/cont003/ra4735/gulaj/GIGATL1/INIT_N100_100_100/GRD3"
 
     # hisindex = [0, 6, 12, 18] | [24, 30, 36, 42] | [48, 54, 60, 66]
     # | [72, 78, 84, 90] | [96, 102, 108, 114]
