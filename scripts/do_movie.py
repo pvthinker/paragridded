@@ -1,18 +1,23 @@
+"""
+Show how to build a movie
+
+The IO and the plot is multi-threaded
+
+In addition this script can be launched with MPI
+"""
+import bindatasets as bd
+from time import time as cputime
+import itertools
+import movietools
+from mpi4py import MPI
+import schwimmbad
+import numpy as np
+import gigatl
 import matplotlib as mpl
 mpl.use('Agg')
 
-import gigatl
-import numpy as np
-import schwimmbad
-from mpi4py import MPI
-import movietools
-import itertools
-from time import time as cputime
 
-import bindatasets as bd
-
-
-comm=MPI.COMM_WORLD
+comm = MPI.COMM_WORLD
 
 myrank = comm.Get_rank()
 nworkers = comm.Get_size()
@@ -23,7 +28,7 @@ print(f"rank: {myrank:02}/{nworkers}", flush=True)
 nthreads = 12
 ndays_per_batch = 2
 
-#plt.ion()
+# plt.ion()
 
 if ismaster:
     print("open HIST")
@@ -38,6 +43,7 @@ domain = [(-40, 50), (0, 65)]
 tiles = gigatl.get_tiles_inside(domain)
 subds = gigatl.get_subds_from_tiles(tiles)
 
+
 def proceed_tile(args):
     tile, hour, date = args
     temp = ds.read(("temp", tile, hour, date))
@@ -45,21 +51,21 @@ def proceed_tile(args):
     return data
 
 
-
 def get_data(tiles, date, hour):
     if ismaster:
-        print(f"read HIST {date}:{hour:02} #tiles: {len(tiles)} in {subds}", flush=True)
+        print(
+            f"read HIST {date}:{hour:02} #tiles: {len(tiles)} in {subds}", flush=True)
     tasks = [(tile, hour, date) for tile in tiles]
     pool = schwimmbad.MultiPool(processes=nthreads)
     data = pool.map(proceed_tile, tasks)
     pool.close()
     return data
 
-    
+
 if ismaster:
     print(f"read GRID #tiles: {len(tiles)} in {subds}")
-lons=grid.pread(("lon_rho", tiles))
-lats=grid.pread(("lat_rho", tiles))
+lons = grid.pread(("lon_rho", tiles))
+lats = grid.pread(("lat_rho", tiles))
 
 dates = ds.dates
 
@@ -83,17 +89,18 @@ varname = "dtemp"
 cmap = "RdBu_r"
 axis = gigatl.domaintoaxis(domain)
 
+
 def analyze(temps):
     return [temp[-1]-temp[-2]
             for temp in temps]
-    
+
 
 if False:
     hmap = movietools.HorizMap(1080)
     hmap._createdir()
     hmap.setup_colorbar((vmin, vmax, cmap))
     hmap.setup_domain((axis, lons, lats))
-    
+
     date = dates[0]
     for hour in range(24):
         data = get_data(tiles, date, hour)
@@ -120,7 +127,8 @@ else:
         time_total += t2-t0
         nframes += 1
         if True:
-                print(f"myrank: {myrank} io:{time_read:.1f} video:{time_video:.1f} total:{time_total:.1f} nframes:{nframes} timeperframe:{time_total/nframes:.2f}")
+            print(
+                f"myrank: {myrank} io:{time_read:.1f} video:{time_video:.1f} total:{time_total:.1f} nframes:{nframes} timeperframe:{time_total/nframes:.2f}")
     thm.close()
-#pool.close()
+# pool.close()
 print(f"myrank: {myrank} DONE")

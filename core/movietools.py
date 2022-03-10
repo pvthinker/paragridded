@@ -12,6 +12,7 @@ videosize = {480: 640,
              720: 1080,
              1080: 1920}
 
+
 class HorizMap():
     def __init__(self, height, verbose=True):
         assert height in [480, 720, 1080]
@@ -25,7 +26,7 @@ class HorizMap():
             mpl.rcParams["font.size"] = 16
         elif height == 720:
             mpl.rcParams["font.size"] = 13
-        
+
         fig, ax = plt.subplots(figsize=(width/self.dpi, height/self.dpi),
                                dpi=self.dpi)
         fig.canvas.get_renderer()
@@ -37,13 +38,13 @@ class HorizMap():
                            0.80, 0.88]
         self.cbposition = [0.87, 0.08,
                            0.10, 0.88]
-        
+
         ax.set_position(self.axposition)
 
         self.dirname = f"{param.dirscratch}/frames"
         self.isdirchecked = False
         self.datehour = ("9999-99-99", 99)
-        
+
     def _createdir(self):
         if not os.path.isdir(self.dirname):
             if self.verbose:
@@ -64,7 +65,7 @@ class HorizMap():
     def setup_colorbar(self, args):
         #self.colorbar_args = args
         self.vmin, self.vmax, self.cmap = args
-        
+
     def plot_frame(self, data_args):
         data, date, hour = data_args
 
@@ -96,16 +97,16 @@ class HorizMap():
         filename = f"img_{date}_{hour:02}.png"
         pngfile = f"{self.dirname}/{filename}"
         if self.verbose:
-            print(f"save {pngfile}")        
+            print(f"save {pngfile}")
         self.fig.savefig(pngfile)
-    
-   
+
+
 def proceed_frame(args):
     hmap, domain_args, data_args = args
     hmap.setup_domain(domain_args)
     hmap.plot_frame(data_args)
     hmap.save_frame()
-    
+
 
 class ThreadedHorizMap():
     def __init__(self, height, nthreads):
@@ -126,7 +127,7 @@ class ThreadedHorizMap():
     def setup_colorbar(self, args):
         for hmap in self.hmaps:
             hmap.setup_colorbar(args)
-    
+
     def proceed_frame(self, data_args):
         data, date, hour = data_args
         hmap = self.hmaps[index]
@@ -134,10 +135,10 @@ class ThreadedHorizMap():
         # hmap.setup_domain(domain_args)
         hmap.plot_frame(domain_args, args)
         hmap.save_frame()
-        
-    def do_frame(self,domain_args,  data_args):
+
+    def do_frame(self, domain_args,  data_args):
         task = (self.hmaps[self.index], domain_args, data_args)
-        self.videotasks += [task]#data_args]
+        self.videotasks += [task]  # data_args]
         self.index += 1
         if self.index == self.nthreads:
             pool = schwimmbad.MultiPool(processes=self.nthreads+1)
@@ -148,6 +149,7 @@ class ThreadedHorizMap():
 
     def close(self):
         [hmaps.fig.close() for hmap in self.hmaps]
+
 
 class Movie():
     """ Home made class to generate mp4 """

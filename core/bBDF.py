@@ -147,7 +147,7 @@ class Dataset():
             if (k == 0) and self.has_stripes:
                 roundingsize = infos["stripes"]["roundingsize"]
                 stripesize = infos["stripes"]["size"]
-                offset = stripesize#roundup(offset, roundingsize)
+                offset = stripesize  # roundup(offset, roundingsize)
                 #self.stripesize = offset
             self.dimsize[name] = offset
             offset = self.dimsize[name]*self.dimcount[name]
@@ -249,11 +249,13 @@ def retrieve_infos(header):
         infos = yaml.load(stream,  Loader=yaml.FullLoader)
     return infos
 
+
 def read_infos(filename):
     headersize = retrieve_headersize(filename)
     header = read_header(filename, headersize)
     return retrieve_infos(header)
-    
+
+
 def convert_list_to_str(infos: dict) -> dict:
     """replace all lists and tuples in a (nested) dictionary
     with strings.
@@ -340,10 +342,11 @@ def read_sample(samplefile):
 
     data = ds.read_variable("temp", (1, 0))
     assert np.allclose(data, 10.)
-    
+
     data = ds.read_variable("time", (3, 9))
     assert np.allclose(np.asarray(data), 159.)
-    
+
+
 class FastRead():
     def __init__(self, dataset):
         self.dataset = dataset
@@ -357,7 +360,7 @@ class FastRead():
     def prefetch0(self, ncount=24):
         assert self.is_open, f"file is closed"
         filesize = self.dataset.filesize
-        data = np.zeros((1,),dtype="i")
+        data = np.zeros((1,), dtype="i")
         for k in range(ncount):
             offset = k*filesize//ncount
             self.fid.seek(offset)
@@ -366,10 +369,9 @@ class FastRead():
     def prefetch(self, name, idx):
         assert self.is_open, f"file is closed"
         offset = self.dataset.get_offset(name, idx)
-        data = np.zeros((1,),dtype="b")
+        data = np.zeros((1,), dtype="b")
         self.fid.seek(offset)
         self.fid.readinto(data)
-            
 
     def read(self, name, idx):
         assert self.is_open, f"file is closed"
@@ -377,10 +379,11 @@ class FastRead():
         toc = self.dataset.toc
         shape = toc[name]["shape"]
         dtype = toc[name]["dtype"]
-        data = np.zeros(shape, dtype=dtype)        
+        data = np.zeros(shape, dtype=dtype)
         self.fid.seek(offset)
         self.fid.readinto(data)
         return data
+
 
 class FastRead2():
     def __init__(self, dataset):
@@ -395,7 +398,7 @@ class FastRead2():
     def prefetch0(self, ncount=24):
         assert self.is_open, f"file is closed"
         filesize = self.dataset.filesize
-        data = np.zeros((1,),dtype="i")
+        data = np.zeros((1,), dtype="i")
         for k in range(ncount):
             offset = k*filesize//ncount
             self.fid.seek(offset)
@@ -404,10 +407,9 @@ class FastRead2():
     def prefetch(self, name, idx):
         assert self.is_open, f"file is closed"
         offset = self.dataset.get_offset(name, idx)
-        data = np.zeros((1,),dtype="b")
+        data = np.zeros((1,), dtype="b")
         self.fid.seek(offset)
         self.fid.readinto(data)
-            
 
     def read(self, name, idx):
         assert self.is_open, f"file is closed"
@@ -415,7 +417,7 @@ class FastRead2():
         toc = self.dataset.toc
         shape = toc[name]["shape"]
         dtype = toc[name]["dtype"]
-        data = np.zeros(shape, dtype=dtype)        
+        data = np.zeros(shape, dtype=dtype)
         self.fid.seek(offset)
         self.fid.readinto(data)
         return data

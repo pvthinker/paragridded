@@ -28,8 +28,10 @@ def get_tiles_inside(domain):
             for tile, q in polygon_tiles.items()
             if p.intersects(q)]
 
+
 def get_subds_from_tiles(tiles):
     return set([subdmap[t] for t in tiles])
+
 
 def draw_tiles(ax, tiles, domain=None, fill=False, **kwargs):
     """ Draw the list of tiles n in ax
@@ -160,7 +162,7 @@ def test_traveling():
                  for s in range(1, 14)
                  if len(regions[s].intersection(t)) > 0]
         ax.set_title(f"#tiles: {ntiles} / regions: {subds}")
-        
+
         fig.canvas.draw()
         plt.pause(1e-6)
 

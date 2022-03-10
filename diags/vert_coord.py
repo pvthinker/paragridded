@@ -34,6 +34,7 @@ def set_scoord(N, hmin, Tcline, theta_s, theta_b):
 
     return (hc, Cs_w, Cs_r)
 
+
 def gigatl():
     # GIGATL
     N = 100
@@ -43,7 +44,8 @@ def gigatl():
     theta_b = 2.
     return (N, hmin, Tcline, theta_s, theta_b)
 
+
 if __name__ == "__main__":
     N, hmin, Tcline, theta_s, theta_b = gigatl()
-    
+
     hc, Cs_w, Cs_r = set_scoord(N, hmin, Tcline, theta_s, theta_b)

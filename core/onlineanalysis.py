@@ -1,6 +1,7 @@
 import numpy as np
 import datetime
 
+
 class color:
     PURPLE = "\033[95m"
     CYAN = "\033[96m"
@@ -15,6 +16,7 @@ class color:
     UNDERLINE = "\033[4m"
     END = "\033[0m"
 
+
 def set_char(value, col):
     if value < chunk:
         c = str(value)
@@ -22,10 +24,11 @@ def set_char(value, col):
         c = "\u2588"
     return col+c+color.END
 
+
 def summary(dates, status, chunk, nchunks):
     today = datetime.datetime.today().strftime("%A %d %B %Y")
     today = color.BOLD+color.BLUE+today+color.END
-    title = f"GIGATL database status on {today}" 
+    title = f"GIGATL database status on {today}"
     header = " "*4+"".join([f"{k:<5}" for k in range(0, nchunks, chunk)])
 
     string = []
@@ -51,10 +54,11 @@ def summary(dates, status, chunk, nchunks):
         day = d.strftime("%d:%b:%y")
         l0 += f"{leftsep:<10}"
         l1 += f"{day:<10}"
-    
+
     string += [l0, l1, ""]
 
     return "\n".join(string)
+
 
 def analyze_filestatus(ds):
     dates = ds.dates
@@ -63,21 +67,21 @@ def analyze_filestatus(ds):
     nchunks = int(np.ceil(ndates/chunk))
     status = np.zeros((13, 3, chunk*nchunks), dtype="b")
 
-    for s in range(13): 
-        r = ds.readers[s+1] 
-        for k,d in enumerate(dates): 
-            if d not in r.dates: 
-                status[s,0,k] = 1 
-            elif r.filestatus[d] == "lost": 
-                status[s,1,k] = 1 
-            elif r.filestatus[d] == "online": 
-                status[s,2,k] = 1 
-
+    for s in range(13):
+        r = ds.readers[s+1]
+        for k, d in enumerate(dates):
+            if d not in r.dates:
+                status[s, 0, k] = 1
+            elif r.filestatus[d] == "lost":
+                status[s, 1, k] = 1
+            elif r.filestatus[d] == "online":
+                status[s, 2, k] = 1
 
     status.shape = (13, 3, nchunks, chunk)
     status = status.sum(axis=-1)
 
     return (dates, status, chunk, nchunks)
+
 
 if __name__ == "__main__":
     import bindatasets as bd
@@ -90,4 +94,3 @@ if __name__ == "__main__":
 
     # with open("status.txt", "w") as fid:
     #     fid.write(summ)
-    

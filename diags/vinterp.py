@@ -19,8 +19,9 @@ def vinterp1d(z, phi, zout, phiout):
 
     libfortran.vinterp1d_(z_, phi_, zout_, phiout_, nz_, nout_, missing_)
 
+
 def vinterp2d(z, phi, zout, phiout):
-    nidx_, nz_  = z.shapeptr
+    nidx_, nz_ = z.shapeptr
     _, nout_ = zout.shapeptr
 
     z_ = z.ptr
@@ -28,7 +29,9 @@ def vinterp2d(z, phi, zout, phiout):
     zout_ = zout.ptr
     phiout_ = phiout.ptr
 
-    libfortran.vinterp2d_basic_(z_, phi_, zout_, phiout_, nidx_, nz_, nout_, missing_)
+    libfortran.vinterp2d_basic_(
+        z_, phi_, zout_, phiout_, nidx_, nz_, nout_, missing_)
+
 
 def vinterp3d(z, phi, zout):
     nz, ny, nx = phi.shape
@@ -54,7 +57,8 @@ def vinterp3d(z, phi, zout):
     phiout = CArray((nout, ny, nx))
     phiout[:] = np.transpose(pout2, [2, 0, 1])
     return phiout
-    
+
+
 def test1d():
     nz = 100
     nout = 3
@@ -62,10 +66,10 @@ def test1d():
     phi = CArray((nz,))
     zout = CArray((nout,))
     phiout = CArray((nout,))
-    
+
     def f(x):
         return np.sin(x)
-    
+
     z.flat = np.arange(nz)*2*np.pi/nz
     phi.flat = f(z)
 
@@ -81,7 +85,8 @@ def test1d():
     plt.clf()
     plt.plot(z, phi, "+-")
     plt.plot(zout, phiout, "o")
-    
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
@@ -94,19 +99,19 @@ if __name__ == "__main__":
     phi = CArray((N, nz))
     zout = CArray((N, nout))
     phiout = CArray((N, nout))
-    
+
     def f(x):
         return np.sin(x)
 
     z1d = np.arange(nz)*2*np.pi/nz
-    z[:,:] =  z1d[np.newaxis, :]
+    z[:, :] = z1d[np.newaxis, :]
     phi.flat = f(z)
 
     zout1d = np.asarray([0.2, 0.5, 2.8, 3.05])
-    zout[:,:] =  zout1d[np.newaxis, :]
+    zout[:, :] = zout1d[np.newaxis, :]
 
     vinterp2d(z, phi, zout, phiout)
 
 # using the Fortran compiled vinterp2d_basic function
-# In [6]: %timeit vinterp2d(z, phi, zout, phiout)                                 
+# In [6]: %timeit vinterp2d(z, phi, zout, phiout)
 # 2.89 ms ± 64.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)

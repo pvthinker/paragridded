@@ -27,16 +27,15 @@ subds = gigatl.get_subds_from_tiles(tiles)
 
 
 print(f"read GRID #tiles: {len(tiles)} in {subds}")
-lons=grid.pread(("lon_rho", tiles))
-lats=grid.pread(("lat_rho", tiles))
+lons = grid.pread(("lon_rho", tiles))
+lats = grid.pread(("lat_rho", tiles))
 axis = gigatl.domaintoaxis(domain)
-
 
 
 vmin = 2.
 vmax = 14.
 varname = "temp"
-date="2008-12-31"
+date = "2008-12-31"
 hour = 23
 
 
@@ -64,8 +63,8 @@ cbposition = [0.87, 0.08,
 
 cmap = "cividis"
 
-fig,ax=plt.subplots(figsize=(width/dpi, height/dpi), dpi=dpi)
-for lon, lat, temp in zip(lons, lats, data): 
+fig, ax = plt.subplots(figsize=(width/dpi, height/dpi), dpi=dpi)
+for lon, lat, temp in zip(lons, lats, data):
     im = ax.pcolormesh(lon, lat, temp[-1], vmin=vmin, vmax=vmax, cmap=cmap)
 ax.set_xlabel("Longitude")
 ax.set_ylabel("Latitude")
@@ -75,4 +74,3 @@ cb = fig.colorbar(im)
 ax.set_position(axposition)
 cb.ax.set_position(cbposition)
 ax.grid()
-

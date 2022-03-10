@@ -4,7 +4,6 @@ Various dataset classes to handle the binary *.dat files
 import bBDF
 import gigatl
 import parameters
-#import glob
 import schwimmbad
 import subprocess
 from functools import lru_cache
@@ -13,12 +12,14 @@ PIPE = subprocess.PIPE
 
 param = parameters.Param()
 
+
 def is_fileonline(filename):
     command = f"ccc_hsm status {filename}"
     result = subprocess.run(command.split(), stdout=PIPE, stderr=PIPE,
                             universal_newlines=True, check=True)
     status = result.stdout.split()[-1]
     return status == "online"
+
 
 @lru_cache(maxsize=None)
 def get_dirstatus(dirname):
@@ -30,20 +31,21 @@ def get_dirstatus(dirname):
                             check=True,
                             shell=True)
     lines = result.stdout.split("\n")[:-1]
-    if len(lines)>0:
+    if len(lines) > 0:
         namestatus = [line.split() for line in lines]
         dirstatus = {arg[1]: arg[0]
                      for arg in namestatus}
     else:
         dirstatus = {}
-    
+
     # namestatus is a nested list [ [filename, status] ]
     # filename contains the full path
     # status is either " released " or " online " (with whitespaces)
-    
+
     # dirstatus = {arg[0]: arg[1].strip() == "online"
     #              for arg in namestatus}
     return dirstatus
+
 
 class Dataset():
     """
@@ -52,9 +54,10 @@ class Dataset():
     the main function provided is read()
 
     """
+
     def __init__(self, bypass_check=False):
         self.subds = list(range(1, 14))
-        self.readers = {subd:RegDataset(subd, bypass_check=bypass_check)
+        self.readers = {subd: RegDataset(subd, bypass_check=bypass_check)
                         for subd in self.subds}
         self.subdmap = gigatl.subdmap
         self.has_threads = False
@@ -108,7 +111,8 @@ class Dataset():
 
         return all([s == "online"
                     for s in status])
-        
+
+
 class GDataset():
     """
     Class to read grid files in bBDF format for any tile
@@ -116,16 +120,16 @@ class GDataset():
     the main function provided is read()
 
     """
+
     def __init__(self):
         self.subds = list(range(1, 14))
-        self.readers = {subd:GridRegDataset(subd)
+        self.readers = {subd: GridRegDataset(subd)
                         for subd in self.subds}
         self.subdmap = gigatl.subdmap
         self.has_threads = False
         self.nthreads = 16
         #self.pool = schwimmbad.MultiPool(processes=self.nthreads+1)
         #self.has_treads = True
-
 
     def read(self, args):
         varname, tile = args
@@ -144,13 +148,16 @@ class GDataset():
         pool.close()
         return data
 
+
 def read_grid(args):
     reader, varname, tile = args
     return reader.read(varname, tile)
 
+
 def read_his(args):
     reader, varname, tile, hour, date = args
     return reader.read((varname, tile, hour, date))
+
 
 class RegDataset():
     """
@@ -265,6 +272,7 @@ class RegDataset():
         dates = list(self.fastread.keys())
         for date in dates:
             self.close_date(date)
+
 
 class GridRegDataset():
     """Class to read grid bBDF data from a given region

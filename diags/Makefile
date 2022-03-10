@@ -1,5 +1,5 @@
 FC = ifort
-FFLAGS = 
+FFLAGS = -O3
 
 C = gfortran
 FFLAGS = -O4 -march=native
