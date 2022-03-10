@@ -17,20 +17,20 @@ Folders:
         type: str
       
     dirgigaref:
-        default: /ccc/store/cont003/gch0401/gch0401/GIGATL1_1h_tides/HIS_1h
+        default: /ccc/store/cont003/gch0401/gch0401/GIGATL1_1h_tides/BIN_1h_JG
         doc: where the NetCDF history files
         avail: change it if you aren't at TGCC
         type: str
       
-    dirgiga:
-        default: /ccc/store/cont003/gch0401/groullet/GIGATL1_1h_tides/HIS_1h
-        doc: UNUSED -> TO BE REMOVED
+    dirgrid:
+        default: /ccc/scratch/cont003/gen12051/groullet/giga/GRD
+        doc: where the bBDF grid files
         avail: change it if you aren't at TGCC
         type: str
-        
+ 
     dirgigabin:
-        default: /ccc/store/cont003/gch0401/groullet/dat
-        doc: where the RGDF history files
+        default: /ccc/store/cont003/gch0401/gch0401/GIGATL1_1h_tides/BIN_1h_JG
+        doc: where the bBDF history files
         avail: change it if you aren't at TGCC
         type: str
  

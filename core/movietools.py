@@ -1,6 +1,153 @@
 import subprocess
 import os
+import glob
+import parameters
+import matplotlib as mpl
+from matplotlib import pyplot as plt
+import schwimmbad
 
+param = parameters.Param()
+
+videosize = {480: 640,
+             720: 1080,
+             1080: 1920}
+
+class HorizMap():
+    def __init__(self, height, verbose=True):
+        assert height in [480, 720, 1080]
+        self.verbose = verbose
+        width = videosize[height]
+        figsize = (width, height)
+        self.figsize = figsize
+        self.dpi = 100
+
+        if height == 1080:
+            mpl.rcParams["font.size"] = 16
+        elif height == 720:
+            mpl.rcParams["font.size"] = 13
+        
+        fig, ax = plt.subplots(figsize=(width/self.dpi, height/self.dpi),
+                               dpi=self.dpi)
+        fig.canvas.get_renderer()
+        self.fig = fig
+        self.ax = ax
+        self.has_colorbar = False
+
+        self.axposition = [0.06, 0.08,
+                           0.80, 0.88]
+        self.cbposition = [0.87, 0.08,
+                           0.10, 0.88]
+        
+        ax.set_position(self.axposition)
+
+        self.dirname = f"{param.dirscratch}/frames"
+        self.isdirchecked = False
+        self.datehour = ("9999-99-99", 99)
+        
+    def _createdir(self):
+        if not os.path.isdir(self.dirname):
+            if self.verbose:
+                print(f"create {self.dirname}")
+            os.makedirs(self.dirname)
+        self.isdirchecked = True
+        pngfiles = glob.glob(f"{self.dirname}/*.png")
+        if len(pngfiles) > 0:
+            if self.verbose:
+                print(f"remove {self.dirname}/*png")
+            for file in pngfiles:
+                os.remove(file)
+
+    def setup_domain(self, args):
+        #self.domain_args = args
+        self.axis, self.lons, self.lats = args
+
+    def setup_colorbar(self, args):
+        #self.colorbar_args = args
+        self.vmin, self.vmax, self.cmap = args
+        
+    def plot_frame(self, data_args):
+        data, date, hour = data_args
+
+        if self.verbose:
+            print(f"do_frame {date}-{hour:02}")
+
+        fig = self.fig
+        ax = self.ax
+        ax.cla()
+        for lon, lat, datum in zip(self.lons, self.lats, data):
+            im = ax.pcolormesh(lon, lat, datum,
+                               vmin=self.vmin, vmax=self.vmax, cmap=self.cmap)
+        ax.set_xlabel("Longitude")
+        ax.set_ylabel("Latitude")
+        ax.set_title(f"{date} : {hour:02}:00")
+        ax.axis(self.axis)
+        ax.set_position(self.axposition)
+        ax.grid()
+        if not self.has_colorbar:
+            cb = fig.colorbar(im)
+            cb.ax.set_position(self.cbposition)
+            self.has_colorbar = True
+            fig.canvas.draw()
+        self.datehour = (date, hour)
+
+    def save_frame(self):
+        assert self.isdirchecked
+        date, hour = self.datehour
+        filename = f"img_{date}_{hour:02}.png"
+        pngfile = f"{self.dirname}/{filename}"
+        if self.verbose:
+            print(f"save {pngfile}")        
+        self.fig.savefig(pngfile)
+    
+   
+def proceed_frame(args):
+    hmap, domain_args, data_args = args
+    hmap.setup_domain(domain_args)
+    hmap.plot_frame(data_args)
+    hmap.save_frame()
+    
+
+class ThreadedHorizMap():
+    def __init__(self, height, nthreads):
+        self.hmaps = [HorizMap(height)
+                      for _ in range(nthreads)]
+        self.nthreads = nthreads
+        self.index = 0
+        self.videotasks = []
+        #self.pool = schwimmbad.MultiPool(processes=nthreads+1)
+
+    def _createdir(self):
+        self.hmaps[0]._createdir()
+
+    def check(self):
+        for hmap in self.hmaps:
+            hmap.isdirchecked = True
+
+    def setup_colorbar(self, args):
+        for hmap in self.hmaps:
+            hmap.setup_colorbar(args)
+    
+    def proceed_frame(self, data_args):
+        data, date, hour = data_args
+        hmap = self.hmaps[index]
+        domain_args = (hmap.axis, hmap.lons, hmap.lats)
+        # hmap.setup_domain(domain_args)
+        hmap.plot_frame(domain_args, args)
+        hmap.save_frame()
+        
+    def do_frame(self,domain_args,  data_args):
+        task = (self.hmaps[self.index], domain_args, data_args)
+        self.videotasks += [task]#data_args]
+        self.index += 1
+        if self.index == self.nthreads:
+            pool = schwimmbad.MultiPool(processes=self.nthreads+1)
+            pool.map(proceed_frame, self.videotasks)
+            pool.close()
+            self.index = 0
+            self.videotasks = []
+
+    def close(self):
+        [hmaps.fig.close() for hmap in self.hmaps]
 
 class Movie():
     """ Home made class to generate mp4 """

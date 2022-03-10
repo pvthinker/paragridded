@@ -20,13 +20,13 @@ fi
 
 # for bash users
 cat > $paragdir/activate.sh << EOF
-export PYTHONPATH=\$PYTHONPATH:`pwd`/core
+export PYTHONPATH=\$PYTHONPATH:`pwd`/core:`pwd`/diags
 echo Python now knows that paragridded is in `pwd`
 EOF
 
 # for csh, tcsh users
 cat > $paragdir/activate.csh << EOF
-setenv PYTHONPATH \$PYTHONPATH:`pwd`/core
+setenv PYTHONPATH \$PYTHONPATH:`pwd`/core:`pwd`/diags
 echo Python now knows that paragridded is in `pwd`
 EOF
 

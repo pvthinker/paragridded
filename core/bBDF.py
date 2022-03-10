@@ -344,7 +344,82 @@ def read_sample(samplefile):
     data = ds.read_variable("time", (3, 9))
     assert np.allclose(np.asarray(data), 159.)
     
-    
+class FastRead():
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.fid = open(dataset.filename, "br")
+        self.is_open = True
+
+    def close(self):
+        self.fid.close()
+        self.is_open = False
+
+    def prefetch0(self, ncount=24):
+        assert self.is_open, f"file is closed"
+        filesize = self.dataset.filesize
+        data = np.zeros((1,),dtype="i")
+        for k in range(ncount):
+            offset = k*filesize//ncount
+            self.fid.seek(offset)
+            self.fid.readinto(data)
+
+    def prefetch(self, name, idx):
+        assert self.is_open, f"file is closed"
+        offset = self.dataset.get_offset(name, idx)
+        data = np.zeros((1,),dtype="b")
+        self.fid.seek(offset)
+        self.fid.readinto(data)
+            
+
+    def read(self, name, idx):
+        assert self.is_open, f"file is closed"
+        offset = self.dataset.get_offset(name, idx)
+        toc = self.dataset.toc
+        shape = toc[name]["shape"]
+        dtype = toc[name]["dtype"]
+        data = np.zeros(shape, dtype=dtype)        
+        self.fid.seek(offset)
+        self.fid.readinto(data)
+        return data
+
+class FastRead2():
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.fid = open(dataset.filename, "br")
+        self.is_open = True
+
+    def close(self):
+        self.fid.close()
+        self.is_open = False
+
+    def prefetch0(self, ncount=24):
+        assert self.is_open, f"file is closed"
+        filesize = self.dataset.filesize
+        data = np.zeros((1,),dtype="i")
+        for k in range(ncount):
+            offset = k*filesize//ncount
+            self.fid.seek(offset)
+            self.fid.readinto(data)
+
+    def prefetch(self, name, idx):
+        assert self.is_open, f"file is closed"
+        offset = self.dataset.get_offset(name, idx)
+        data = np.zeros((1,),dtype="b")
+        self.fid.seek(offset)
+        self.fid.readinto(data)
+            
+
+    def read(self, name, idx):
+        assert self.is_open, f"file is closed"
+        offset = self.dataset.get_offset(name, idx)
+        toc = self.dataset.toc
+        shape = toc[name]["shape"]
+        dtype = toc[name]["dtype"]
+        data = np.zeros(shape, dtype=dtype)        
+        self.fid.seek(offset)
+        self.fid.readinto(data)
+        return data
+
 
 if __name__ == "__main__":
 
