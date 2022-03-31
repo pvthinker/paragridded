@@ -1,8 +1,8 @@
 FC = ifort
-FFLAGS = -O3
+FFLAGS = -O3 -qopt-report-phase=vec -axCORE-AVX2
 
-C = gfortran
-FFLAGS = -O4 -march=native
+#FC = gfortran
+#FFLAGS = -O4 -march=native
 
 
 SRC = zlevs.F zlevs_croco_new.F rho_eos.F vinterp.f90

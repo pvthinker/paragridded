@@ -5,6 +5,7 @@ import parameters
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import schwimmbad
+from mpi4py import MPI
 
 param = parameters.Param()
 
@@ -53,10 +54,12 @@ class HorizMap():
         self.isdirchecked = True
         pngfiles = glob.glob(f"{self.dirname}/*.png")
         if len(pngfiles) > 0:
-            if self.verbose:
-                print(f"remove {self.dirname}/*png")
-            for file in pngfiles:
-                os.remove(file)
+            myrank = MPI.COMM_WORLD.Get_rank()
+            if myrank == 0:
+                if self.verbose:
+                    print(f"remove {self.dirname}/*png")
+                for file in pngfiles:
+                    os.remove(file)
 
     def setup_domain(self, args):
         #self.domain_args = args
@@ -65,6 +68,42 @@ class HorizMap():
     def setup_colorbar(self, args):
         #self.colorbar_args = args
         self.vmin, self.vmax, self.cmap = args
+
+    def plot_crossfade(self, args1, args2, date, hour, alpha1, alpha2):
+
+        data1, cb1_args = args1
+        data2, cb2_args = args2
+
+        vmin1, vmax1, cmap1 = cb1_args
+        vmin2, vmax2, cmap2 = cb2_args
+
+        if self.verbose:
+            print(f"do_frame {date}-{hour:02}")
+
+        fig = self.fig
+        ax = self.ax
+        ax.cla()
+        for lon, lat, dat1, dat2 in zip(self.lons, self.lats, data1, data2):
+            im = ax.pcolormesh(lon, lat, dat1,
+                               vmin=vmin1, vmax=vmax1,
+                               cmap=cmap1, alpha=alpha1,
+                               shading="auto")
+            ax.pcolormesh(lon, lat, dat2,
+                          vmin=vmin2, vmax=vmax2,
+                          cmap=cmap2, alpha=alpha2,
+                          shading="auto")
+        ax.set_xlabel("Longitude")
+        ax.set_ylabel("Latitude")
+        ax.set_title(f"{date} : {hour:02}:00")
+        ax.axis(self.axis)
+        ax.set_position(self.axposition)
+        ax.grid()
+        if not self.has_colorbar:
+            cb = fig.colorbar(im)
+            cb.ax.set_position(self.cbposition)
+            self.has_colorbar = True
+            fig.canvas.draw()
+        self.datehour = (date, hour)
 
     def plot_frame(self, data_args):
         data, date, hour = data_args
@@ -77,7 +116,9 @@ class HorizMap():
         ax.cla()
         for lon, lat, datum in zip(self.lons, self.lats, data):
             im = ax.pcolormesh(lon, lat, datum,
-                               vmin=self.vmin, vmax=self.vmax, cmap=self.cmap)
+                               vmin=self.vmin, vmax=self.vmax,
+                               cmap=self.cmap,
+                               shading="auto")
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
         ax.set_title(f"{date} : {hour:02}:00")
@@ -85,10 +126,13 @@ class HorizMap():
         ax.set_position(self.axposition)
         ax.grid()
         if not self.has_colorbar:
+            if hasattr(self, "cb"):
+                self.cb.remove()
             cb = fig.colorbar(im)
             cb.ax.set_position(self.cbposition)
             self.has_colorbar = True
             fig.canvas.draw()
+            self.cb = cb
         self.datehour = (date, hour)
 
     def save_frame(self):
@@ -111,7 +155,7 @@ def proceed_frame(args):
 class ThreadedHorizMap():
     def __init__(self, height, nthreads):
         self.hmaps = [HorizMap(height)
-                      for _ in range(nthreads)]
+                      for k in range(nthreads)]
         self.nthreads = nthreads
         self.index = 0
         self.videotasks = []
@@ -119,6 +163,7 @@ class ThreadedHorizMap():
 
     def _createdir(self):
         self.hmaps[0]._createdir()
+        self.check()
 
     def check(self):
         for hmap in self.hmaps:
@@ -132,13 +177,13 @@ class ThreadedHorizMap():
         data, date, hour = data_args
         hmap = self.hmaps[index]
         domain_args = (hmap.axis, hmap.lons, hmap.lats)
-        # hmap.setup_domain(domain_args)
+        hmap.setup_domain(domain_args)
         hmap.plot_frame(domain_args, args)
         hmap.save_frame()
 
     def do_frame(self, domain_args,  data_args):
         task = (self.hmaps[self.index], domain_args, data_args)
-        self.videotasks += [task]  # data_args]
+        self.videotasks += [task]
         self.index += 1
         if self.index == self.nthreads:
             pool = schwimmbad.MultiPool(processes=self.nthreads+1)

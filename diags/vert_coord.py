@@ -45,6 +45,12 @@ def gigatl():
     return (N, hmin, Tcline, theta_s, theta_b)
 
 
+def sigma2z(sigma, Cs, zeta, h, hc):
+    cff2 = (zeta+h)/(h+hc)
+    z = zeta + (hc*sigma+Cs*h)*cff2
+    return z
+
+
 if __name__ == "__main__":
     N, hmin, Tcline, theta_s, theta_b = gigatl()
 

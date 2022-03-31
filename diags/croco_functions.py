@@ -39,6 +39,20 @@ def zlevs(h, zeta, hc, Cs_r, Cs_w, z_r, z_w):
                                 z_r_, z_w_)
 
 
+def zrs(h, zeta, hc, Cs_r, z_r):
+    N_, Mm_, Lm_ = z_r.shapeptr
+
+    h_ = h.ptr
+    zeta_ = zeta.ptr
+    hc_ = byref(c_float(hc))
+    Cs_r_ = Cs_r.ptr
+    z_r_ = z_r.ptr
+
+    libfortran.zrs_croco_new_(Lm_, Mm_, N_,
+                              h_, zeta_,
+                              hc_, Cs_r_, z_r_)
+
+
 def rho_eos(T, S, z_r, z_w, rho0, rho):
     N_, Mm_, Lm_ = T.shapeptr
     T_ = T.ptr

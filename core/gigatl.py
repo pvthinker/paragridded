@@ -20,6 +20,25 @@ def get_corners_from_domain(domain):
     return [(xa, ya), (xa, yb), (xb, yb), (xb, ya)]
 
 
+def get_bbox_from_tiles(tiles):
+    # TODO put this function into gigatl.py
+    lonmin = 999.
+    lonmax = -999.
+    latmin = 999.
+    latmax = -999.
+    for tile in tiles:
+        lons = [corners[tile][k][0]
+                for k in range(4)]
+        lats = [corners[tile][k][1]
+                for k in range(4)]
+        lonmin = min([lonmin] + lons)
+        lonmax = max([lonmax] + lons)
+        latmin = min([latmin] + lats)
+        latmax = max([latmax] + lats)
+
+    return [(lonmin, latmin), (lonmax, latmax)]
+
+
 def get_tiles_inside(domain):
     """ Returns the list of tiles having grid points in domain """
     domain_corners = get_corners_from_domain(domain)

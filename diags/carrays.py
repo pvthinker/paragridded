@@ -1,17 +1,30 @@
 import numpy as np
 
-from ctypes import POINTER, c_void_p, c_int, c_char, c_double, c_int8, byref, cdll
+from ctypes import POINTER, c_void_p, c_int, c_char, c_float, c_double, c_int8, c_int32, byref, cdll
 
 
 def ptr(array):
-    return array.ctypes.data_as(POINTER(c_double))
+    if array.dtype == np.float32:
+        return array.ctypes.data_as(POINTER(c_float))
+
+    elif array.dtype == np.float64:
+        return array.ctypes.data_as(POINTER(c_double))
+
+    elif array.dtype == np.int8:
+        return array.ctypes.data_as(POINTER(c_int8))
+
+    elif array.dtype == np.int32:
+        return array.ctypes.data_as(POINTER(c_int32))
+
+    else:
+        raise ValueError(f"dtype {array.dtype} is not implemented")
 
 
 class CArray(np.ndarray):
     # https://stackoverflow.com/questions/33881694/overloading-the-operator-in-python-class-to-refer-to-a-numpy-array-data-membe#33882066
-    def __new__(cls, arg, fill_value=0, dtype=float, attrs={}):
+    def __new__(cls, arg, fill_value=0, dtype=None, attrs={}):
         if isinstance(arg, np.ndarray):
-            if arg.dtype != dtype:
+            if (dtype is not None) and (arg.dtype != dtype):
                 data = np.asarray(arg, dtype=dtype)
             else:
                 data = arg

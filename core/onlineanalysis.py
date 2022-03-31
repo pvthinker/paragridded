@@ -1,5 +1,8 @@
 import numpy as np
 import datetime
+import subprocess
+
+PIPE = subprocess.PIPE
 
 
 class color:
@@ -17,7 +20,7 @@ class color:
     END = "\033[0m"
 
 
-def set_char(value, col):
+def set_char(value, chunk, col):
     if value < chunk:
         c = str(value)
     else:
@@ -36,12 +39,12 @@ def summary(dates, status, chunk, nchunks):
     for k in range(13):
         line = f"{k+1:2}: "
         for l in range(nchunks):
-            if status[k, 0, l] > 0:
-                c = set_char(status[k, 0, l], color.DARK_GRAY)
+            if status[k, 2, l] > 0:
+                c = set_char(status[k, 2, l], chunk, color.BLUE+color.BOLD)
             elif status[k, 1, l] > 0:
-                c = set_char(status[k, 1, l], color.RED)
+                c = set_char(status[k, 1, l], chunk, color.RED)
             else:
-                c = set_char(status[k, 2, l], color.BLUE+color.BOLD)
+                c = set_char(status[k, 0, l], chunk, color.DARK_GRAY)
             line += c
         string += [line]
 
@@ -72,7 +75,7 @@ def analyze_filestatus(ds):
         for k, d in enumerate(dates):
             if d not in r.dates:
                 status[s, 0, k] = 1
-            elif r.filestatus[d] == "lost":
+            elif r.filestatus[d] == "released":
                 status[s, 1, k] = 1
             elif r.filestatus[d] == "online":
                 status[s, 2, k] = 1
@@ -81,6 +84,24 @@ def analyze_filestatus(ds):
     status = status.sum(axis=-1)
 
     return (dates, status, chunk, nchunks)
+
+
+def fetch(ds, subd, date0, ndays):
+    d0 = datetime.date.fromisoformat(date0)
+    dates = [(d0+datetime.timedelta(k)).strftime("%Y-%m-%d")
+             for k in range(ndays)]
+    reader = ds.readers[subd]
+    files_to_fetch = [reader.filename(date)
+                      for date in dates
+                      if (date in reader.filestatus)
+                      and (reader.filestatus[date] == "released")
+                      ]
+    for file in files_to_fetch:
+        command = f"ccc_hsm get -b {file} &"
+        print(command)
+        result = subprocess.run(command.split(), stdout=PIPE, stderr=PIPE,
+                                universal_newlines=True, check=True)
+    return files_to_fetch
 
 
 if __name__ == "__main__":
